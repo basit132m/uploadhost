@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       for (const file of files) {
         await prisma.file.update({
           where: { id: file.id },
-          data: { tags: tags ?? [] },
+          data: { tags: JSON.stringify(tags ?? []) },
         });
       }
       return NextResponse.json({ success: true, count: files.length });

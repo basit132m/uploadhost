@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -41,30 +41,30 @@ enum UploadSessionStatus {
 }
 
 model User {
-  id                   String     @id @default(cuid())
-  email                String     @unique
-  emailVerified        DateTime?
-  name                 String?
-  passwordHash         String?
-  image                String?
-  bio                  String?
-  role                 UserRole   @default(USER)
-  status               UserStatus @default(ACTIVE)
-  twoFactorEnabled     Boolean    @default(false)
-  twoFactorSecret      String?
-  apiEnabled           Boolean    @default(false)
-  apiKey               String?    @unique
-  storageUsed          BigInt     @default(0)
-  totalDownloads       BigInt     @default(0)
-  totalUploads         Int        @default(0)
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @updatedAt
+  id               String     @id @default(cuid())
+  email            String     @unique
+  emailVerified    DateTime?
+  name             String?
+  passwordHash     String?
+  image            String?    @db.Text
+  bio              String?    @db.Text
+  role             UserRole   @default(USER)
+  status           UserStatus @default(ACTIVE)
+  twoFactorEnabled Boolean    @default(false)
+  twoFactorSecret  String?
+  apiEnabled       Boolean    @default(false)
+  apiKey           String?    @unique
+  storageUsed      BigInt     @default(0)
+  totalDownloads   BigInt     @default(0)
+  totalUploads     Int        @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   accounts       Account[]
   sessions       Session[]
   files          File[]
   folders        Folder[]
-  reports        Report[]   @relation("ReportedBy")
+  reports        Report[]        @relation("ReportedBy")
   uploadSessions UploadSession[]
 }
 
@@ -123,11 +123,11 @@ model File {
   folderId      String?
   shortId       String    @unique
   originalName  String
-  storageKey    String    @unique
+  storageKey    String    @unique @db.VarChar(500)
   mimeType      String
   extension     String
   size          BigInt
-  tags          String[]  @default([])
+  tags          String    @default("[]") @db.Text
   downloadCount Int       @default(0)
   maxDownloads  Int?
   expiresAt     DateTime?
@@ -135,8 +135,8 @@ model File {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  folder  Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder  Folder?     @relation(fields: [folderId], references: [id], onDelete: SetNull)
   shares  FileShare[]
   reports Report[]
 }
@@ -150,25 +150,25 @@ model FileShare {
   expiresAt     DateTime?
   maxDownloads  Int?
   downloadCount Int       @default(0)
-  redirectUrl   String?
+  redirectUrl   String?   @db.Text
   createdAt     DateTime  @default(now())
 
   file File @relation(fields: [fileId], references: [id], onDelete: Cascade)
 }
 
 model UploadSession {
-  id              String              @id @default(cuid())
-  userId          String
-  filename        String
-  mimeType        String
-  totalSize       BigInt
-  uploadedSize    BigInt              @default(0)
-  totalChunks     Int
-  chunksReceived  Int                 @default(0)
-  storageKey      String
-  status          UploadSessionStatus @default(PENDING)
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  id             String              @id @default(cuid())
+  userId         String
+  filename       String
+  mimeType       String
+  totalSize      BigInt
+  uploadedSize   BigInt              @default(0)
+  totalChunks    Int
+  chunksReceived Int                 @default(0)
+  storageKey     String              @db.VarChar(500)
+  status         UploadSessionStatus @default(PENDING)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -178,7 +178,7 @@ model Report {
   fileId     String
   reporterId String
   reason     String
-  details    String?
+  details    String?      @db.Text
   status     ReportStatus @default(PENDING)
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
@@ -209,7 +209,7 @@ model CustomPage {
   title     String
   content   String   @db.Text
   metaTitle String?
-  metaDesc  String?
+  metaDesc  String?  @db.Text
   published Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

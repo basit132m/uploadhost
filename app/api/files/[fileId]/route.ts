@@ -18,7 +18,7 @@ export async function PATCH(
   const updates: any = {};
   if (body.name !== undefined) updates.originalName = body.name;
   if (body.folderId !== undefined) updates.folderId = body.folderId || null;
-  if (body.tags !== undefined) updates.tags = body.tags;
+  if (body.tags !== undefined) updates.tags = JSON.stringify(body.tags);
 
   const updated = await prisma.file.update({
     where: { id: params.fileId },

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   const where: any = { userId: session.user.id };
   if (search) where.originalName = { contains: search, mode: "insensitive" };
-  if (tag) where.tags = { has: tag };
+  if (tag) where.tags = { contains: `"${tag}"` };
   if (ext) where.extension = ext;
   if (folderId !== undefined) where.folderId = folderId || null;
 
@@ -37,7 +37,11 @@ export async function GET(request: NextRequest) {
   ]);
 
   return NextResponse.json({
-    files: files.map((f) => ({ ...f, size: f.size.toString() })),
+    files: files.map((f) => ({
+      ...f,
+      size: f.size.toString(),
+      tags: (() => { try { return JSON.parse(f.tags); } catch { return []; } })(),
+    })),
     total,
     pages: Math.ceil(total / limit),
     page,
