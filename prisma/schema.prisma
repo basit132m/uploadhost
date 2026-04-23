@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+  BANNED
+}
+
+enum ShareType {
+  DIRECT
+  ONE_TIME
+  TIME_EXPIRY
+  PASSWORD
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+enum UploadSessionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id                   String     @id @default(cuid())
+  email                String     @unique
+  emailVerified        DateTime?
+  name                 String?
+  passwordHash         String?
+  image                String?
+  bio                  String?
+  role                 UserRole   @default(USER)
+  status               UserStatus @default(ACTIVE)
+  twoFactorEnabled     Boolean    @default(false)
+  twoFactorSecret      String?
+  apiEnabled           Boolean    @default(false)
+  apiKey               String?    @unique
+  storageUsed          BigInt     @default(0)
+  totalDownloads       BigInt     @default(0)
+  totalUploads         Int        @default(0)
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  files          File[]
+  folders        Folder[]
+  reports        Report[]   @relation("ReportedBy")
+  uploadSessions UploadSession[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  userId    String
+  parentId  String?
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children Folder[] @relation("FolderHierarchy")
+  files    File[]
+}
+
+model File {
+  id            String    @id @default(cuid())
+  userId        String
+  folderId      String?
+  shortId       String    @unique
+  originalName  String
+  storageKey    String    @unique
+  mimeType      String
+  extension     String
+  size          BigInt
+  tags          String[]  @default([])
+  downloadCount Int       @default(0)
+  maxDownloads  Int?
+  expiresAt     DateTime?
+  isEncrypted   Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder  Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  shares  FileShare[]
+  reports Report[]
+}
+
+model FileShare {
+  id            String    @id @default(cuid())
+  fileId        String
+  shareType     ShareType @default(DIRECT)
+  token         String    @unique
+  password      String?
+  expiresAt     DateTime?
+  maxDownloads  Int?
+  downloadCount Int       @default(0)
+  redirectUrl   String?
+  createdAt     DateTime  @default(now())
+
+  file File @relation(fields: [fileId], references: [id], onDelete: Cascade)
+}
+
+model UploadSession {
+  id              String              @id @default(cuid())
+  userId          String
+  filename        String
+  mimeType        String
+  totalSize       BigInt
+  uploadedSize    BigInt              @default(0)
+  totalChunks     Int
+  chunksReceived  Int                 @default(0)
+  storageKey      String
+  status          UploadSessionStatus @default(PENDING)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  fileId     String
+  reporterId String
+  reason     String
+  details    String?
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  file     File @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  reporter User @relation("ReportedBy", fields: [reporterId], references: [id], onDelete: Cascade)
+}
+
+model AdminSetting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}
+
+model AdminLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  adminName String
+  action    String
+  details   String?  @db.Text
+  ip        String?
+  createdAt DateTime @default(now())
+}
+
+model CustomPage {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   String   @db.Text
+  metaTitle String?
+  metaDesc  String?
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdSlot {
+  id        String   @id @default(cuid())
+  name      String
+  slotKey   String   @unique
+  code      String   @db.Text
+  page      String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CountryBlock {
+  countryCode String   @id
+  countryName String
+  createdAt   DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+}
