@@ -31,7 +31,7 @@ export async function PATCH(
   });
 
   await logAdminAction(
-    session.user.id,
+    session.user.id!,
     session.user.name ?? session.user.email!,
     `Updated user ${targetUser.email}`,
     JSON.stringify(body),

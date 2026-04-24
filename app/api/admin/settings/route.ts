@@ -23,7 +23,7 @@ export async function PATCH(request: NextRequest) {
   await setSettings(updates);
 
   await logAdminAction(
-    session.user.id,
+    session.user.id!,
     session.user.name ?? session.user.email!,
     "Updated settings",
     Object.keys(updates).join(", "),

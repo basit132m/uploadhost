@@ -25,7 +25,7 @@ export async function DELETE(
   });
 
   await logAdminAction(
-    session.user.id,
+    session.user.id!,
     session.user.name ?? session.user.email!,
     `Deleted all files for user ${params.userId}`,
     `${files.length} files deleted`,
