@@ -7,17 +7,24 @@ import { getSetting } from "@/lib/settings";
 import { redirect } from "next/navigation";
 
 export default async function HomePage() {
-  const settings = await getSettings();
+  let settings: Record<string, string>;
+  let pages: { slug: string; title: string }[] = [];
 
-  if (settings.maintenanceMode === "true") {
-    // Admin bypasses maintenance mode
+  try {
+    settings = await getSettings();
+    pages = await prisma.customPage.findMany({
+      where: { published: true },
+      select: { slug: true, title: true },
+      orderBy: { createdAt: "asc" },
+    });
+  } catch {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 text-center px-4">
+        <h1 className="text-3xl font-bold">UploadHost</h1>
+        <p className="text-muted-foreground">Starting up — please refresh in a moment.</p>
+      </div>
+    );
   }
-
-  const pages = await prisma.customPage.findMany({
-    where: { published: true },
-    select: { slug: true, title: true },
-    orderBy: { createdAt: "asc" },
-  });
 
   return (
     <div className="flex flex-col min-h-screen">
