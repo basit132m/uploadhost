@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const pages = await prisma.customPage.findMany({ where: { published: true } });
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://uploadhost.site";
