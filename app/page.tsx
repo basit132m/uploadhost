@@ -17,7 +17,8 @@ export default async function HomePage() {
       select: { slug: true, title: true },
       orderBy: { createdAt: "asc" },
     });
-  } catch {
+  } catch (err) {
+    console.error("[homepage] DB error:", err);
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 text-center px-4">
         <h1 className="text-3xl font-bold">UploadHost</h1>
