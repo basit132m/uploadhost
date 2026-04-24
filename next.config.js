@@ -8,9 +8,6 @@ const nextConfig = {
       { protocol: 'https', hostname: '**' },
     ],
   },
-  api: {
-    bodyParser: false,
-  },
 };
 
 module.exports = nextConfig;
